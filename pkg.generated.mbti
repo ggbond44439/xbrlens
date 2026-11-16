@@ -2,6 +2,7 @@
 package "ggbond44439/xbrlens"
 
 import {
+  "moonbitlang/core/bigint",
   "moonbitlang/core/debug",
 }
 
@@ -19,6 +20,24 @@ pub fn version() -> String
 // Errors
 
 // Types and methods
+pub(all) struct Decimal {
+  coefficient : @bigint.BigInt
+  scale : Int32
+} derive(Eq, @debug.Debug)
+pub fn Decimal::add(Self, Self, Int32) -> Result[Self, XbrlError]
+pub fn Decimal::compare(Self, Self) -> Int32
+pub fn Decimal::equal(Self, Self) -> Bool
+pub fn Decimal::is_zero(Self) -> Bool
+pub fn Decimal::mul(Self, Self, Int32) -> Result[Self, XbrlError]
+pub fn Decimal::neg(Self) -> Self
+pub fn Decimal::normalize(Self) -> Self
+pub fn Decimal::not_equal(Self, Self) -> Bool
+pub fn Decimal::parse(StringView) -> Result[Self, XbrlError]
+pub fn Decimal::sub(Self, Self, Int32) -> Result[Self, XbrlError]
+pub fn Decimal::to_canonical_string(Self) -> String
+pub fn Decimal::to_repr(Self) -> @debug.Repr
+pub fn Decimal::to_scaled_integer(Self, Int32) -> Result[@bigint.BigInt, XbrlError]
+
 pub(all) struct NamespaceBinding {
   prefix : String
   uri : String
