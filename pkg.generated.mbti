@@ -90,6 +90,25 @@ pub fn QName::new(String, String) -> Result[Self, XbrlError]
 pub fn QName::not_equal(Self, Self) -> Bool
 pub fn QName::to_repr(Self) -> @debug.Repr
 
+pub(all) struct ResolvedTaxonomy {
+  root_location : String
+  schemas : Array[ResolvedTaxonomySchema]
+} derive(Eq, @debug.Debug)
+pub fn ResolvedTaxonomy::concept(Self, String, String) -> XbrlConcept?
+pub fn ResolvedTaxonomy::equal(Self, Self) -> Bool
+pub fn ResolvedTaxonomy::not_equal(Self, Self) -> Bool
+pub fn ResolvedTaxonomy::schema(Self, String) -> ResolvedTaxonomySchema?
+pub fn ResolvedTaxonomy::to_repr(Self) -> @debug.Repr
+
+pub(all) struct ResolvedTaxonomySchema {
+  location : String
+  schema : XbrlSchema
+  source : String
+} derive(Eq, @debug.Debug)
+pub fn ResolvedTaxonomySchema::equal(Self, Self) -> Bool
+pub fn ResolvedTaxonomySchema::not_equal(Self, Self) -> Bool
+pub fn ResolvedTaxonomySchema::to_repr(Self) -> @debug.Repr
+
 pub(all) struct RoleType {
   id : String
   role_uri : String
@@ -100,6 +119,26 @@ pub(all) struct RoleType {
 pub fn RoleType::equal(Self, Self) -> Bool
 pub fn RoleType::not_equal(Self, Self) -> Bool
 pub fn RoleType::to_repr(Self) -> @debug.Repr
+
+pub(all) struct TaxonomyCatalog {
+  entries : Array[TaxonomyCatalogEntry]
+} derive(Eq, @debug.Debug)
+pub fn TaxonomyCatalog::add(Self, String, String, StringView) -> Result[Unit, XbrlError]
+pub fn TaxonomyCatalog::entry(Self, String) -> TaxonomyCatalogEntry?
+pub fn TaxonomyCatalog::equal(Self, Self) -> Bool
+pub fn TaxonomyCatalog::new() -> Self
+pub fn TaxonomyCatalog::not_equal(Self, Self) -> Bool
+pub fn TaxonomyCatalog::resolve(Self, String, XbrlLimits) -> Result[ResolvedTaxonomy, XbrlError]
+pub fn TaxonomyCatalog::to_repr(Self) -> @debug.Repr
+
+pub(all) struct TaxonomyCatalogEntry {
+  location : String
+  namespace_uri : String
+  source : String
+} derive(Eq, @debug.Debug)
+pub fn TaxonomyCatalogEntry::equal(Self, Self) -> Bool
+pub fn TaxonomyCatalogEntry::not_equal(Self, Self) -> Bool
+pub fn TaxonomyCatalogEntry::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TaxonomyImport {
   namespace_uri : String
