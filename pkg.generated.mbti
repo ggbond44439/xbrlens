@@ -1,0 +1,92 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "ggbond44439/xbrlens"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn resolve_qname(StringView, Array[NamespaceBinding], Bool) -> Result[QName, XbrlError]
+
+pub fn version() -> String
+
+// Errors
+
+// Types and methods
+pub(all) struct NamespaceBinding {
+  prefix : String
+  uri : String
+} derive(Eq, @debug.Debug)
+pub fn NamespaceBinding::equal(Self, Self) -> Bool
+pub fn NamespaceBinding::new(String, String) -> Self
+pub fn NamespaceBinding::not_equal(Self, Self) -> Bool
+pub fn NamespaceBinding::to_repr(Self) -> @debug.Repr
+
+pub(all) struct QName {
+  namespace_uri : String
+  local_name : String
+} derive(Eq, @debug.Debug)
+pub fn QName::equal(Self, Self) -> Bool
+pub fn QName::expanded(Self) -> String
+pub fn QName::local_part(Self) -> String
+pub fn QName::matches(Self, String, String) -> Bool
+pub fn QName::namespace_uri(Self) -> String
+pub fn QName::new(String, String) -> Result[Self, XbrlError]
+pub fn QName::not_equal(Self, Self) -> Bool
+pub fn QName::to_repr(Self) -> @debug.Repr
+
+pub(all) enum XbrlError {
+  InvalidLimit(String, Int32)
+  LimitExceeded(String, Int32, Int32)
+  InvalidQName(String, Int32)
+  MissingNamespace(String, Int32)
+  XmlSyntax(String, Int32)
+  UnsafeXml(String, Int32)
+  InvalidDecimal(String, Int32)
+  InvalidContext(String, Int32)
+  InvalidUnit(String, Int32)
+  InvalidTaxonomy(String, Int32)
+  MissingConcept(String)
+  UnresolvedReference(String)
+  InvalidDimension(String, Int32)
+  DuplicateFact(String, Int32)
+  CalculationMismatch(String, String, String)
+  InvalidFact(String, Int32)
+  UnsupportedFeature(String)
+  Io(String)
+} derive(Eq, @debug.Debug)
+pub fn XbrlError::equal(Self, Self) -> Bool
+pub fn XbrlError::not_equal(Self, Self) -> Bool
+pub fn XbrlError::output(Self, &Logger) -> Unit
+pub fn XbrlError::to_repr(Self) -> @debug.Repr
+pub fn XbrlError::to_string(Self) -> String
+pub impl Show for XbrlError
+
+pub(all) struct XbrlLimits {
+  max_source_bytes : Int32
+  max_xml_depth : Int32
+  max_xml_nodes : Int32
+  max_attributes_per_element : Int32
+  max_text_bytes : Int32
+  max_facts : Int32
+  max_taxonomy_documents : Int32
+  max_linkbase_arcs : Int32
+} derive(Eq, @debug.Debug)
+pub fn XbrlLimits::check_attributes(Self, Int32) -> Result[Unit, XbrlError]
+pub fn XbrlLimits::check_depth(Self, Int32) -> Result[Unit, XbrlError]
+pub fn XbrlLimits::check_facts(Self, Int32) -> Result[Unit, XbrlError]
+pub fn XbrlLimits::check_linkbase_arcs(Self, Int32) -> Result[Unit, XbrlError]
+pub fn XbrlLimits::check_nodes(Self, Int32) -> Result[Unit, XbrlError]
+pub fn XbrlLimits::check_source(Self, Int32) -> Result[Unit, XbrlError]
+pub fn XbrlLimits::check_taxonomy_documents(Self, Int32) -> Result[Unit, XbrlError]
+pub fn XbrlLimits::check_text(Self, Int32) -> Result[Unit, XbrlError]
+pub fn XbrlLimits::default() -> Self
+pub fn XbrlLimits::equal(Self, Self) -> Bool
+pub fn XbrlLimits::not_equal(Self, Self) -> Bool
+pub fn XbrlLimits::strict() -> Self
+pub fn XbrlLimits::to_repr(Self) -> @debug.Repr
+pub fn XbrlLimits::validate(Self) -> Result[Unit, XbrlError]
+
+// Type aliases
+
+// Traits
