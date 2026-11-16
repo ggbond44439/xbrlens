@@ -127,7 +127,7 @@ pub fn resolve_qname(
   let mut index = bindings.length() - 1
   while index >= 0 {
     let binding = bindings[index]
-    if binding.prefix == prefix {
+    if binding.prefix == prefix && (prefix != "" || use_default_namespace) {
       uri = binding.uri
       found = true
       break
@@ -137,7 +137,7 @@ pub fn resolve_qname(
   if !found {
     if prefix == "xml" {
       uri = "http://www.w3.org/XML/1998/namespace"
-    } else if prefix == "" && !use_default_namespace {
+    } else if prefix == "" {
       uri = ""
     } else {
       return Err(MissingNamespace(prefix, 0))
