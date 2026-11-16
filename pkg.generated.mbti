@@ -6,6 +6,10 @@ import {
 }
 
 // Values
+pub fn parse_instance(XmlDocument, XbrlLimits) -> Result[XbrlInstance, XbrlError]
+
+pub fn parse_instance_xml(StringView, XbrlLimits) -> Result[XbrlInstance, XbrlError]
+
 pub fn parse_xml(StringView, XbrlLimits) -> Result[XmlDocument, XbrlError]
 
 pub fn resolve_qname(StringView, Array[NamespaceBinding], Bool) -> Result[QName, XbrlError]
@@ -37,6 +41,18 @@ pub fn QName::new(String, String) -> Result[Self, XbrlError]
 pub fn QName::not_equal(Self, Self) -> Bool
 pub fn QName::to_repr(Self) -> @debug.Repr
 
+pub(all) struct XbrlContext {
+  id : String
+  entity_scheme : String
+  entity_identifier : String
+  period : XbrlPeriod
+  scenario : XmlNode?
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn XbrlContext::equal(Self, Self) -> Bool
+pub fn XbrlContext::not_equal(Self, Self) -> Bool
+pub fn XbrlContext::to_repr(Self) -> @debug.Repr
+
 pub(all) enum XbrlError {
   InvalidLimit(String, Int32)
   LimitExceeded(String, Int32, Int32)
@@ -64,6 +80,36 @@ pub fn XbrlError::to_repr(Self) -> @debug.Repr
 pub fn XbrlError::to_string(Self) -> String
 pub impl Show for XbrlError
 
+pub(all) struct XbrlFact {
+  id : String?
+  concept : QName
+  context_ref : String
+  unit_ref : String?
+  decimals : String?
+  precision : String?
+  language : String?
+  value : String
+  nil : Bool
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn XbrlFact::equal(Self, Self) -> Bool
+pub fn XbrlFact::not_equal(Self, Self) -> Bool
+pub fn XbrlFact::to_repr(Self) -> @debug.Repr
+
+pub(all) struct XbrlInstance {
+  schema_refs : Array[String]
+  contexts : Array[XbrlContext]
+  units : Array[XbrlUnitDefinition]
+  facts : Array[XbrlFact]
+} derive(Eq, @debug.Debug)
+pub fn XbrlInstance::context(Self, String) -> XbrlContext?
+pub fn XbrlInstance::equal(Self, Self) -> Bool
+pub fn XbrlInstance::facts_for_concept(Self, QName) -> Array[XbrlFact]
+pub fn XbrlInstance::facts_for_context(Self, String) -> Array[XbrlFact]
+pub fn XbrlInstance::not_equal(Self, Self) -> Bool
+pub fn XbrlInstance::to_repr(Self) -> @debug.Repr
+pub fn XbrlInstance::unit(Self, String) -> XbrlUnitDefinition?
+
 pub(all) struct XbrlLimits {
   max_source_bytes : Int32
   max_xml_depth : Int32
@@ -88,6 +134,31 @@ pub fn XbrlLimits::not_equal(Self, Self) -> Bool
 pub fn XbrlLimits::strict() -> Self
 pub fn XbrlLimits::to_repr(Self) -> @debug.Repr
 pub fn XbrlLimits::validate(Self) -> Result[Unit, XbrlError]
+
+pub(all) enum XbrlPeriod {
+  Instant(String)
+  Duration(String, String)
+} derive(Eq, @debug.Debug)
+pub fn XbrlPeriod::equal(Self, Self) -> Bool
+pub fn XbrlPeriod::not_equal(Self, Self) -> Bool
+pub fn XbrlPeriod::to_repr(Self) -> @debug.Repr
+
+pub(all) enum XbrlUnit {
+  Simple(QName)
+  Divide(Array[QName], Array[QName])
+} derive(Eq, @debug.Debug)
+pub fn XbrlUnit::equal(Self, Self) -> Bool
+pub fn XbrlUnit::not_equal(Self, Self) -> Bool
+pub fn XbrlUnit::to_repr(Self) -> @debug.Repr
+
+pub(all) struct XbrlUnitDefinition {
+  id : String
+  unit : XbrlUnit
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn XbrlUnitDefinition::equal(Self, Self) -> Bool
+pub fn XbrlUnitDefinition::not_equal(Self, Self) -> Bool
+pub fn XbrlUnitDefinition::to_repr(Self) -> @debug.Repr
 
 pub(all) struct XmlAttribute {
   name : QName
