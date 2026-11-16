@@ -11,6 +11,10 @@ pub fn parse_instance(XmlDocument, XbrlLimits) -> Result[XbrlInstance, XbrlError
 
 pub fn parse_instance_xml(StringView, XbrlLimits) -> Result[XbrlInstance, XbrlError]
 
+pub fn parse_taxonomy(XmlDocument) -> Result[XbrlSchema, XbrlError]
+
+pub fn parse_taxonomy_xml(StringView, XbrlLimits) -> Result[XbrlSchema, XbrlError]
+
 pub fn parse_xml(StringView, XbrlLimits) -> Result[XmlDocument, XbrlError]
 
 pub fn resolve_qname(StringView, Array[NamespaceBinding], Bool) -> Result[QName, XbrlError]
@@ -20,6 +24,32 @@ pub fn version() -> String
 // Errors
 
 // Types and methods
+pub(all) enum ConceptBalance {
+  Debit
+  Credit
+  Unspecified
+} derive(Eq, @debug.Debug)
+pub fn ConceptBalance::equal(Self, Self) -> Bool
+pub fn ConceptBalance::not_equal(Self, Self) -> Bool
+pub fn ConceptBalance::to_repr(Self) -> @debug.Repr
+
+pub(all) enum ConceptKind {
+  Item
+  Tuple
+} derive(Eq, @debug.Debug)
+pub fn ConceptKind::equal(Self, Self) -> Bool
+pub fn ConceptKind::not_equal(Self, Self) -> Bool
+pub fn ConceptKind::to_repr(Self) -> @debug.Repr
+
+pub(all) enum ConceptPeriodType {
+  Instant
+  Duration
+  Unspecified
+} derive(Eq, @debug.Debug)
+pub fn ConceptPeriodType::equal(Self, Self) -> Bool
+pub fn ConceptPeriodType::not_equal(Self, Self) -> Bool
+pub fn ConceptPeriodType::to_repr(Self) -> @debug.Repr
+
 pub(all) struct Decimal {
   coefficient : @bigint.BigInt
   scale : Int32
@@ -59,6 +89,42 @@ pub fn QName::namespace_uri(Self) -> String
 pub fn QName::new(String, String) -> Result[Self, XbrlError]
 pub fn QName::not_equal(Self, Self) -> Bool
 pub fn QName::to_repr(Self) -> @debug.Repr
+
+pub(all) struct RoleType {
+  id : String
+  role_uri : String
+  definition : String?
+  used_on : Array[QName]
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn RoleType::equal(Self, Self) -> Bool
+pub fn RoleType::not_equal(Self, Self) -> Bool
+pub fn RoleType::to_repr(Self) -> @debug.Repr
+
+pub(all) struct TaxonomyImport {
+  namespace_uri : String
+  schema_location : String?
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn TaxonomyImport::equal(Self, Self) -> Bool
+pub fn TaxonomyImport::not_equal(Self, Self) -> Bool
+pub fn TaxonomyImport::to_repr(Self) -> @debug.Repr
+
+pub(all) struct XbrlConcept {
+  name : QName
+  id : String?
+  type_name : QName
+  substitution_group : QName
+  kind : ConceptKind
+  period_type : ConceptPeriodType
+  balance : ConceptBalance
+  is_abstract : Bool
+  nillable : Bool
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn XbrlConcept::equal(Self, Self) -> Bool
+pub fn XbrlConcept::not_equal(Self, Self) -> Bool
+pub fn XbrlConcept::to_repr(Self) -> @debug.Repr
 
 pub(all) struct XbrlContext {
   id : String
@@ -161,6 +227,18 @@ pub(all) enum XbrlPeriod {
 pub fn XbrlPeriod::equal(Self, Self) -> Bool
 pub fn XbrlPeriod::not_equal(Self, Self) -> Bool
 pub fn XbrlPeriod::to_repr(Self) -> @debug.Repr
+
+pub(all) struct XbrlSchema {
+  target_namespace : String
+  imports : Array[TaxonomyImport]
+  concepts : Array[XbrlConcept]
+  role_types : Array[RoleType]
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn XbrlSchema::concept(Self, String, String) -> XbrlConcept?
+pub fn XbrlSchema::equal(Self, Self) -> Bool
+pub fn XbrlSchema::not_equal(Self, Self) -> Bool
+pub fn XbrlSchema::to_repr(Self) -> @debug.Repr
 
 pub(all) enum XbrlUnit {
   Simple(QName)
