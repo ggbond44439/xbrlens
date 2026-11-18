@@ -9,6 +9,8 @@ import {
 // Values
 pub fn check_calculations(XbrlLinkbase, ResolvedTaxonomy, XbrlInstance) -> Result[CalculationReport, XbrlError]
 
+pub fn parse_context_dimensions(XmlNode?, XmlNode?) -> Result[Array[DimensionMember], XbrlError]
+
 pub fn parse_instance(XmlDocument, XbrlLimits) -> Result[XbrlInstance, XbrlError]
 
 pub fn parse_instance_xml(StringView, XbrlLimits) -> Result[XbrlInstance, XbrlError]
@@ -150,6 +152,15 @@ pub fn Decimal::to_canonical_string(Self) -> String
 pub fn Decimal::to_repr(Self) -> @debug.Repr
 pub fn Decimal::to_scaled_integer(Self, Int32) -> Result[@bigint.BigInt, XbrlError]
 pub fn Decimal::zero() -> Self
+
+pub(all) enum DimensionMember {
+  Explicit(QName, QName)
+  Typed(QName, QName, String)
+} derive(Eq, @debug.Debug)
+pub fn DimensionMember::dimension(Self) -> QName
+pub fn DimensionMember::equal(Self, Self) -> Bool
+pub fn DimensionMember::not_equal(Self, Self) -> Bool
+pub fn DimensionMember::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LabelLink {
   role_uri : String
@@ -322,9 +333,12 @@ pub(all) struct XbrlContext {
   entity_scheme : String
   entity_identifier : String
   period : XbrlPeriod
+  segment : XmlNode?
   scenario : XmlNode?
+  dimensions : Array[DimensionMember]
   offset : Int32
 } derive(Eq, @debug.Debug)
+pub fn XbrlContext::dimension(Self, QName) -> DimensionMember?
 pub fn XbrlContext::equal(Self, Self) -> Bool
 pub fn XbrlContext::not_equal(Self, Self) -> Bool
 pub fn XbrlContext::to_repr(Self) -> @debug.Repr

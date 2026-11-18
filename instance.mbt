@@ -22,7 +22,9 @@ pub(all) struct XbrlContext {
   entity_scheme : String
   entity_identifier : String
   period : XbrlPeriod
+  segment : XmlNode?
   scenario : XmlNode?
+  dimensions : Array[DimensionMember]
   offset : Int32
 } derive(Eq, @debug.Debug)
 
@@ -319,12 +321,20 @@ fn parse_context(node : XmlNode) -> Result[XbrlContext, XbrlError] {
     Ok(value) => value
     Err(err) => return Err(err)
   }
+  let segment = entity.child(XBRL_INSTANCE_NS, "segment")
+  let scenario = node.child(XBRL_INSTANCE_NS, "scenario")
+  let dimensions = match parse_context_dimensions(segment, scenario) {
+    Ok(value) => value
+    Err(err) => return Err(err)
+  }
   Ok({
     id,
     entity_scheme,
     entity_identifier,
     period,
-    scenario: node.child(XBRL_INSTANCE_NS, "scenario"),
+    segment,
+    scenario,
+    dimensions,
     offset: node.offset,
   })
 }
