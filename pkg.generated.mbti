@@ -11,6 +11,8 @@ pub fn check_calculations(XbrlLinkbase, ResolvedTaxonomy, XbrlInstance) -> Resul
 
 pub fn check_fact_integrity(XbrlInstance) -> FactIntegrityReport
 
+pub fn cli_help_text() -> String
+
 pub fn export_csv(XbrlInstance) -> Result[String, XbrlError]
 
 pub fn export_json(XbrlInstance) -> Result[String, XbrlError]
@@ -23,6 +25,8 @@ pub fn parse_instance(XmlDocument, XbrlLimits) -> Result[XbrlInstance, XbrlError
 
 pub fn parse_instance_xml(StringView, XbrlLimits) -> Result[XbrlInstance, XbrlError]
 
+pub fn parse_invocation(ArrayView[String]) -> Result[CliInvocation, CliError]
+
 pub fn parse_linkbase(XmlDocument, XbrlLimits) -> Result[XbrlLinkbase, XbrlError]
 
 pub fn parse_linkbase_xml(StringView, XbrlLimits) -> Result[XbrlLinkbase, XbrlError]
@@ -34,6 +38,8 @@ pub fn parse_taxonomy_xml(StringView, XbrlLimits) -> Result[XbrlSchema, XbrlErro
 pub fn parse_xml(StringView, XbrlLimits) -> Result[XmlDocument, XbrlError]
 
 pub fn resolve_qname(StringView, Array[NamespaceBinding], Bool) -> Result[QName, XbrlError]
+
+pub fn run(ArrayView[String]) -> CliResult
 
 pub fn version() -> String
 
@@ -102,6 +108,53 @@ pub fn CalculationReport::is_valid(Self) -> Bool
 pub fn CalculationReport::mismatches(Self) -> Array[CalculationCheck]
 pub fn CalculationReport::not_equal(Self, Self) -> Bool
 pub fn CalculationReport::to_repr(Self) -> @debug.Repr
+
+pub(all) enum CliCommand {
+  Help
+  Version
+  Inspect
+  Facts
+  Validate
+  Calc
+  Diff
+} derive(Eq, @debug.Debug)
+pub fn CliCommand::equal(Self, Self) -> Bool
+pub fn CliCommand::not_equal(Self, Self) -> Bool
+pub fn CliCommand::to_repr(Self) -> @debug.Repr
+
+pub(all) enum CliError {
+  UnknownCommand(String)
+  UnknownOption(String)
+  MissingArgument(String)
+} derive(Eq, @debug.Debug)
+pub fn CliError::equal(Self, Self) -> Bool
+pub fn CliError::not_equal(Self, Self) -> Bool
+pub fn CliError::output(Self, &Logger) -> Unit
+pub fn CliError::to_repr(Self) -> @debug.Repr
+pub fn CliError::to_string(Self) -> String
+pub impl Show for CliError
+
+pub(all) struct CliInvocation {
+  command : CliCommand
+  args : Array[String]
+  json : Bool
+  csv : Bool
+  help : Bool
+} derive(Eq, @debug.Debug)
+pub fn CliInvocation::equal(Self, Self) -> Bool
+pub fn CliInvocation::not_equal(Self, Self) -> Bool
+pub fn CliInvocation::to_repr(Self) -> @debug.Repr
+
+pub(all) struct CliResult {
+  exit_code : Int32
+  stdout : String
+  stderr : String
+} derive(Eq, @debug.Debug)
+pub fn CliResult::equal(Self, Self) -> Bool
+pub fn CliResult::failure(Int32, String) -> Self
+pub fn CliResult::not_equal(Self, Self) -> Bool
+pub fn CliResult::success(String) -> Self
+pub fn CliResult::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ConceptBalance {
   Debit

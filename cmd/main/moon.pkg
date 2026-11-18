@@ -1,0 +1,6 @@
+import {
+  "ggbond44439/xbrlens",
+  "moonbitlang/core/env",
+}
+
+pkgtype(kind: "executable")

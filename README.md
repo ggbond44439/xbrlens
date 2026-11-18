@@ -17,6 +17,19 @@ moon test --target all
 moon fmt --check
 ```
 
+## CLI
+
+The executable entry point supports five workflows:
+
+```bash
+moon run cmd/main -- inspect '<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance"></xbrli:xbrl>'
+moon run cmd/main -- facts '<instance-xml>'
+moon run cmd/main -- facts --csv '<instance-xml>'
+moon run cmd/main -- validate '<instance-xml>'
+moon run cmd/main -- calc '<instance-xml>' '<taxonomy-xml>' '<linkbase-xml>'
+moon run cmd/main -- diff '<left-instance-xml>' '<right-instance-xml>'
+```
+
 ## License
 
 Apache-2.0
