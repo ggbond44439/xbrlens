@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:link="http://www.xbrl.org/2003/linkbase" targetNamespace="http://example.com/xbrlens/taxonomy/2024">
+  <link:roleType roleURI="http://example.com/xbrlens/role/balance" id="balance"><link:definition>Balance sheet</link:definition><link:usedOn>link:calculationLink</link:usedOn></link:roleType>
+  <xs:element name="Revenue" id="Revenue" type="xbrli:monetaryItemType" substitutionGroup="xbrli:item" periodType="duration" balance="credit"/>
+  <xs:element name="Assets" id="Assets" type="xbrli:monetaryItemType" substitutionGroup="xbrli:item" periodType="instant" balance="debit"/>
+  <xs:element name="CurrentAssets" id="CurrentAssets" type="xbrli:monetaryItemType" substitutionGroup="xbrli:item" periodType="instant" balance="debit"/>
+  <xs:element name="NoncurrentAssets" id="NoncurrentAssets" type="xbrli:monetaryItemType" substitutionGroup="xbrli:item" periodType="instant" balance="debit"/>
+</xs:schema>

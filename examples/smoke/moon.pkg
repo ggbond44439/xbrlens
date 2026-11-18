@@ -1,0 +1,5 @@
+import {
+  "ggbond44439/xbrlens",
+}
+
+pkgtype(kind: "executable")

@@ -17,6 +17,22 @@ moon test --target all
 moon fmt --check
 ```
 
+## Fixtures and examples
+
+A representative filing fixture is available in `fixtures/sample/` with an instance, taxonomy and calculation linkbase. Run the end-to-end smoke example with:
+
+```bash
+moon run examples/smoke
+```
+
+Run an independent XML-parser differential check with:
+
+```bash
+python scripts/differential_check.py
+```
+
+The fixture covers duration and instant contexts, monetary units, an explicit dimension, numeric facts and a weighted calculation relationship.
+
 ## Security
 
 Parsing is bounded by configurable source, depth, node, attribute, text, fact and linkbase-arc limits. DTDs and external entities are rejected, as are invalid XML control characters and raw `]]>` text. Use `audit_instance_source` to obtain a bounded input audit summary.

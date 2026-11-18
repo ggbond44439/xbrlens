@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<link:linkbase xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <link:calculationLink xlink:type="extended" xlink:role="http://example.com/xbrlens/role/balance">
+    <link:loc xlink:type="locator" xlink:href="taxonomy.xsd#Assets" xlink:label="Assets"/>
+    <link:loc xlink:type="locator" xlink:href="taxonomy.xsd#CurrentAssets" xlink:label="CurrentAssets"/>
+    <link:loc xlink:type="locator" xlink:href="taxonomy.xsd#NoncurrentAssets" xlink:label="NoncurrentAssets"/>
+    <link:calculationArc xlink:type="arc" xlink:from="Assets" xlink:to="CurrentAssets" xlink:arcrole="http://www.xbrl.org/2003/arcrole/summation-item" weight="1" order="1"/>
+    <link:calculationArc xlink:type="arc" xlink:from="Assets" xlink:to="NoncurrentAssets" xlink:arcrole="http://www.xbrl.org/2003/arcrole/summation-item" weight="1" order="2"/>
+  </link:calculationLink>
+</link:linkbase>

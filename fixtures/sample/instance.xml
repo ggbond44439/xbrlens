@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:iso4217="http://www.xbrl.org/2003/iso4217" xmlns:ex="http://example.com/xbrlens/taxonomy/2024" xmlns:xbrldi="http://xbrl.org/2006/xbrldi" xmlns:seg="http://example.com/xbrlens/segment">
+  <link:schemaRef xlink:type="simple" xlink:href="taxonomy.xsd"/>
+  <xbrli:context id="fy2024">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sec.gov/CIK">0000000001</xbrli:identifier>
+      <xbrli:segment>
+        <xbrldi:explicitMember dimension="seg:SegmentAxis">seg:EnterpriseMember</xbrldi:explicitMember>
+      </xbrli:segment>
+    </xbrli:entity>
+    <xbrli:period><xbrli:startDate>2024-01-01</xbrli:startDate><xbrli:endDate>2024-12-31</xbrli:endDate></xbrli:period>
+  </xbrli:context>
+  <xbrli:context id="instant2024">
+    <xbrli:entity><xbrli:identifier scheme="http://www.sec.gov/CIK">0000000001</xbrli:identifier></xbrli:entity>
+    <xbrli:period><xbrli:instant>2024-12-31</xbrli:instant></xbrli:period>
+  </xbrli:context>
+  <xbrli:unit id="usd"><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unit>
+  <ex:Revenue contextRef="fy2024" unitRef="usd" decimals="-6" id="revenue">1250000</ex:Revenue>
+  <ex:Assets contextRef="instant2024" unitRef="usd" decimals="-6" id="assets">5000000</ex:Assets>
+  <ex:CurrentAssets contextRef="instant2024" unitRef="usd" decimals="-6" id="current-assets">2000000</ex:CurrentAssets>
+  <ex:NoncurrentAssets contextRef="instant2024" unitRef="usd" decimals="-6" id="noncurrent-assets">3000000</ex:NoncurrentAssets>
+</xbrli:xbrl>
