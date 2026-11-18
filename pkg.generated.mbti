@@ -7,6 +7,8 @@ import {
 }
 
 // Values
+pub fn audit_instance_source(StringView, XbrlLimits) -> Result[SecurityAudit, XbrlError]
+
 pub fn check_calculations(XbrlLinkbase, ResolvedTaxonomy, XbrlInstance) -> Result[CalculationReport, XbrlError]
 
 pub fn check_fact_integrity(XbrlInstance) -> FactIntegrityReport
@@ -414,6 +416,17 @@ pub(all) struct RoleType {
 pub fn RoleType::equal(Self, Self) -> Bool
 pub fn RoleType::not_equal(Self, Self) -> Bool
 pub fn RoleType::to_repr(Self) -> @debug.Repr
+
+pub(all) struct SecurityAudit {
+  source_bytes : Int32
+  xml_nodes : Int32
+  contexts : Int32
+  units : Int32
+  facts : Int32
+} derive(Eq, @debug.Debug)
+pub fn SecurityAudit::equal(Self, Self) -> Bool
+pub fn SecurityAudit::not_equal(Self, Self) -> Bool
+pub fn SecurityAudit::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TaxonomyCatalog {
   entries : Array[TaxonomyCatalogEntry]

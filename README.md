@@ -17,6 +17,10 @@ moon test --target all
 moon fmt --check
 ```
 
+## Security
+
+Parsing is bounded by configurable source, depth, node, attribute, text, fact and linkbase-arc limits. DTDs and external entities are rejected, as are invalid XML control characters and raw `]]>` text. Use `audit_instance_source` to obtain a bounded input audit summary.
+
 ## CLI
 
 The executable entry point supports five workflows:

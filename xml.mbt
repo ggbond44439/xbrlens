@@ -252,6 +252,29 @@ fn parse_decimal_digits(
 }
 
 ///|
+fn invalid_xml_char(code : UInt16) -> Bool {
+  code == 0 ||
+  (code < 32 && code != 9 && code != 10 && code != 13) ||
+  code == 65534 ||
+  code == 65535
+}
+
+///|
+fn validate_xml_segment(
+  value : StringView,
+  offset : Int32,
+) -> Result[Unit, XbrlError] {
+  let mut index = 0
+  while index < value.length() {
+    if invalid_xml_char(value.at(index)) {
+      return Err(XmlSyntax("invalid XML control character", offset + index))
+    }
+    index += 1
+  }
+  Ok(())
+}
+
+///|
 fn append_codepoint(
   builder : StringBuilder,
   value : Int32,
@@ -274,6 +297,9 @@ fn decode_xml_text(
   let length = value.length()
   while index < length {
     if value.at(index) != 38 {
+      if invalid_xml_char(value.at(index)) {
+        return Err(XmlSyntax("invalid XML control character", offset + index))
+      }
       builder.write_string(
         value.view(start_offset=index, end_offset=index + 1).to_owned(),
       )
@@ -609,9 +635,15 @@ fn XmlParser::parse_element(
       if self.index + 3 > self.source.length() {
         return Err(XmlSyntax("unterminated CDATA section", start))
       }
-      let cdata = self.source
-        .view(start_offset=start, end_offset=self.index)
-        .to_owned()
+      let cdata_view = self.source.view(
+        start_offset=start,
+        end_offset=self.index,
+      )
+      match validate_xml_segment(cdata_view, start) {
+        Ok(_) => ()
+        Err(err) => return Err(err)
+      }
+      let cdata = cdata_view.to_owned()
       self.text_bytes += cdata.length()
       match self.limits.check_text(self.text_bytes) {
         Ok(_) => ()
@@ -654,6 +686,9 @@ fn XmlParser::parse_element(
         Ok(value) => value
         Err(err) => return Err(err)
       }
+      if decoded.contains("]]>") {
+        return Err(XmlSyntax("']]>' is not allowed in character data", start))
+      }
       self.text_bytes += decoded.length()
       match self.limits.check_text(self.text_bytes) {
         Ok(_) => ()
@@ -677,6 +712,10 @@ pub fn parse_xml(
     Err(err) => return Err(err)
   }
   match limits.check_source(source.length()) {
+    Ok(_) => ()
+    Err(err) => return Err(err)
+  }
+  match validate_xml_segment(source, 0) {
     Ok(_) => ()
     Err(err) => return Err(err)
   }
