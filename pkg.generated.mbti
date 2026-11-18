@@ -37,6 +37,38 @@ pub fn ArcUse::equal(Self, Self) -> Bool
 pub fn ArcUse::not_equal(Self, Self) -> Bool
 pub fn ArcUse::to_repr(Self) -> @debug.Repr
 
+pub(all) struct CalculationGroup {
+  role_uri : String
+  parent : QName
+  relations : Array[CalculationRelation]
+} derive(Eq, @debug.Debug)
+pub fn CalculationGroup::equal(Self, Self) -> Bool
+pub fn CalculationGroup::not_equal(Self, Self) -> Bool
+pub fn CalculationGroup::to_repr(Self) -> @debug.Repr
+
+pub(all) struct CalculationLink {
+  role_uri : String
+  locators : Array[LinkLocator]
+  arcs : Array[LinkArc]
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn CalculationLink::equal(Self, Self) -> Bool
+pub fn CalculationLink::not_equal(Self, Self) -> Bool
+pub fn CalculationLink::to_repr(Self) -> @debug.Repr
+
+pub(all) struct CalculationRelation {
+  link_role_uri : String
+  parent : QName
+  child : QName
+  weight : Decimal
+  order : Decimal?
+  priority : Int32
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn CalculationRelation::equal(Self, Self) -> Bool
+pub fn CalculationRelation::not_equal(Self, Self) -> Bool
+pub fn CalculationRelation::to_repr(Self) -> @debug.Repr
+
 pub(all) enum ConceptBalance {
   Debit
   Credit
@@ -121,6 +153,7 @@ pub(all) struct LinkArc {
   to_label : String
   arcrole : String
   order : Decimal?
+  weight : Decimal?
   preferred_label : QName?
   arc_use : ArcUse
   priority : Int32
@@ -357,7 +390,10 @@ pub fn XbrlLimits::validate(Self) -> Result[Unit, XbrlError]
 pub(all) struct XbrlLinkbase {
   label_links : Array[LabelLink]
   presentation_links : Array[PresentationLink]
+  calculation_links : Array[CalculationLink]
 } derive(Eq, @debug.Debug)
+pub fn XbrlLinkbase::calculation_groups(Self, ResolvedTaxonomy) -> Result[Array[CalculationGroup], XbrlError]
+pub fn XbrlLinkbase::calculation_relations(Self, ResolvedTaxonomy) -> Result[Array[CalculationRelation], XbrlError]
 pub fn XbrlLinkbase::equal(Self, Self) -> Bool
 pub fn XbrlLinkbase::labels(Self, ResolvedTaxonomy) -> Result[Array[ConceptLabel], XbrlError]
 pub fn XbrlLinkbase::not_equal(Self, Self) -> Bool

@@ -5,6 +5,9 @@ const XBRL_CONCEPT_LABEL_ARROLE : String = "http://www.xbrl.org/2003/arcrole/con
 const XBRL_PARENT_CHILD_ARROLE : String = "http://www.xbrl.org/2003/arcrole/parent-child"
 
 ///|
+const XBRL_SUMMATION_ITEM_ARROLE : String = "http://www.xbrl.org/2003/arcrole/summation-item"
+
+///|
 const XML_LANGUAGE_NS : String = "http://www.w3.org/XML/1998/namespace"
 
 ///|
@@ -36,6 +39,7 @@ pub(all) struct LinkArc {
   to_label : String
   arcrole : String
   order : Decimal?
+  weight : Decimal?
   preferred_label : QName?
   arc_use : ArcUse
   priority : Int32
@@ -60,9 +64,18 @@ pub(all) struct PresentationLink {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub(all) struct CalculationLink {
+  role_uri : String
+  locators : Array[LinkLocator]
+  arcs : Array[LinkArc]
+  offset : Int32
+} derive(Eq, @debug.Debug)
+
+///|
 pub(all) struct XbrlLinkbase {
   label_links : Array[LabelLink]
   presentation_links : Array[PresentationLink]
+  calculation_links : Array[CalculationLink]
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -85,6 +98,24 @@ pub(all) struct PresentationRelation {
   preferred_label : QName?
   priority : Int32
   offset : Int32
+} derive(Eq, @debug.Debug)
+
+///|
+pub(all) struct CalculationRelation {
+  link_role_uri : String
+  parent : QName
+  child : QName
+  weight : Decimal
+  order : Decimal?
+  priority : Int32
+  offset : Int32
+} derive(Eq, @debug.Debug)
+
+///|
+pub(all) struct CalculationGroup {
+  role_uri : String
+  parent : QName
+  relations : Array[CalculationRelation]
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -239,6 +270,14 @@ fn parse_link_arc(node : XmlNode) -> Result[LinkArc, XbrlError] {
       }
     None => None
   }
+  let weight = match optional_link_attribute(node, "weight") {
+    Some(value) =>
+      match Decimal::parse(value) {
+        Ok(decimal) => Some(decimal)
+        Err(err) => return Err(err)
+      }
+    None => None
+  }
   let preferred_label = match optional_link_attribute(node, "preferredLabel") {
     Some(value) =>
       match resolve_qname(value, node.namespaces, true) {
@@ -264,6 +303,7 @@ fn parse_link_arc(node : XmlNode) -> Result[LinkArc, XbrlError] {
     to_label,
     arcrole,
     order,
+    weight,
     preferred_label,
     arc_use,
     priority,
@@ -464,8 +504,89 @@ fn parse_presentation_link(
       arcs.push(arc)
     }
   }
-  let link = { role_uri, locators, arcs, offset: node.offset, }
+  let link : PresentationLink = {
+    role_uri,
+    locators,
+    arcs,
+    offset: node.offset,
+  }
   match validate_presentation_link(link) {
+    Ok(_) => Ok(link)
+    Err(err) => Err(err)
+  }
+}
+
+///|
+fn validate_calculation_link(link : CalculationLink) -> Result[Unit, XbrlError] {
+  for arc in link.arcs {
+    if arc.arcrole != XBRL_SUMMATION_ITEM_ARROLE {
+      return Err(
+        InvalidLinkbase(
+          "calculationArc requires the summation-item arcrole",
+          arc.offset,
+        ),
+      )
+    }
+    if locator_by_label(link.locators, arc.from_label) is None ||
+      locator_by_label(link.locators, arc.to_label) is None {
+      return Err(
+        InvalidLinkbase(
+          "calculationArc endpoint does not resolve to a locator",
+          arc.offset,
+        ),
+      )
+    }
+    if arc.weight is None {
+      return Err(
+        InvalidLinkbase("calculationArc weight is required", arc.offset),
+      )
+    }
+  }
+  Ok(())
+}
+
+///|
+fn parse_calculation_link(node : XmlNode) -> Result[CalculationLink, XbrlError] {
+  match check_link_xlink_type(node, "extended") {
+    Ok(_) => ()
+    Err(err) => return Err(err)
+  }
+  let role_uri = match required_link_xlink_attribute(node, "role") {
+    Ok(value) => value
+    Err(err) => return Err(err)
+  }
+  let locators : Array[LinkLocator] = []
+  let arcs : Array[LinkArc] = []
+  for child in node.children {
+    if child.name.matches(XBRL_LINK_NS, "loc") {
+      let locator = match parse_locator(child) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      if has_locator_label(locators, locator.label) {
+        return Err(
+          InvalidLinkbase(
+            "duplicate locator label '" + locator.label + "'",
+            child.offset,
+          ),
+        )
+      }
+      locators.push(locator)
+    } else if child.name.matches(XBRL_LINK_NS, "calculationArc") {
+      let arc = match parse_link_arc(child) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      arcs.push(arc)
+    }
+  }
+  let link : CalculationLink = {
+    role_uri,
+    locators,
+    arcs,
+    offset: node.offset,
+  }
+  match validate_calculation_link(link) {
     Ok(_) => Ok(link)
     Err(err) => Err(err)
   }
@@ -486,6 +607,7 @@ pub fn parse_linkbase(
   }
   let label_links : Array[LabelLink] = []
   let presentation_links : Array[PresentationLink] = []
+  let calculation_links : Array[CalculationLink] = []
   let mut total_arcs = 0
   for child in document.root.children {
     if child.name.matches(XBRL_LINK_NS, "labelLink") {
@@ -510,9 +632,20 @@ pub fn parse_linkbase(
         Err(err) => return Err(err)
       }
       presentation_links.push(link)
+    } else if child.name.matches(XBRL_LINK_NS, "calculationLink") {
+      let link = match parse_calculation_link(child) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      total_arcs += link.arcs.length()
+      match limits.check_linkbase_arcs(total_arcs) {
+        Ok(_) => ()
+        Err(err) => return Err(err)
+      }
+      calculation_links.push(link)
     }
   }
-  Ok({ label_links, presentation_links, })
+  Ok({ label_links, presentation_links, calculation_links, })
 }
 
 ///|
@@ -615,6 +748,97 @@ pub fn XbrlLinkbase::labels(
 }
 
 ///|
+pub fn XbrlLinkbase::calculation_relations(
+  self : XbrlLinkbase,
+  taxonomy : ResolvedTaxonomy,
+) -> Result[Array[CalculationRelation], XbrlError] {
+  let result : Array[CalculationRelation] = []
+  for link in self.calculation_links {
+    for arc in link.arcs {
+      if arc.arc_use == Prohibited {
+        continue
+      }
+      let from_locator = match locator_by_label(link.locators, arc.from_label) {
+        Some(value) => value
+        None =>
+          return Err(
+            InvalidLinkbase(
+              "calculationArc from label does not resolve",
+              arc.offset,
+            ),
+          )
+      }
+      let to_locator = match locator_by_label(link.locators, arc.to_label) {
+        Some(value) => value
+        None =>
+          return Err(
+            InvalidLinkbase(
+              "calculationArc to label does not resolve",
+              arc.offset,
+            ),
+          )
+      }
+      let parent = match locator_concept(taxonomy, from_locator) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      let child = match locator_concept(taxonomy, to_locator) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      let weight = match arc.weight {
+        Some(value) => value
+        None =>
+          return Err(
+            InvalidLinkbase("calculationArc weight is required", arc.offset),
+          )
+      }
+      result.push({
+        link_role_uri: link.role_uri,
+        parent: parent.name,
+        child: child.name,
+        weight,
+        order: arc.order,
+        priority: arc.priority,
+        offset: arc.offset,
+      })
+    }
+  }
+  Ok(result)
+}
+
+///|
+pub fn XbrlLinkbase::calculation_groups(
+  self : XbrlLinkbase,
+  taxonomy : ResolvedTaxonomy,
+) -> Result[Array[CalculationGroup], XbrlError] {
+  let relations = match self.calculation_relations(taxonomy) {
+    Ok(value) => value
+    Err(err) => return Err(err)
+  }
+  let groups : Array[CalculationGroup] = []
+  for relation in relations {
+    let mut found = false
+    for group in groups {
+      if group.role_uri == relation.link_role_uri &&
+        group.parent == relation.parent {
+        group.relations.push(relation)
+        found = true
+        break
+      }
+    }
+    if !found {
+      groups.push({
+        role_uri: relation.link_role_uri,
+        parent: relation.parent,
+        relations: [relation],
+      })
+    }
+  }
+  Ok(groups)
+}
+
+///|
 pub fn XbrlLinkbase::presentation_relations(
   self : XbrlLinkbase,
   taxonomy : ResolvedTaxonomy,
@@ -698,6 +922,12 @@ pub extend LabelLink with Eq::{not_equal, equal}
 pub extend LabelLink with @debug.Debug::{to_repr}
 
 ///|
+pub extend CalculationLink with Eq::{not_equal, equal}
+
+///|
+pub extend CalculationLink with @debug.Debug::{to_repr}
+
+///|
 pub extend PresentationLink with Eq::{not_equal, equal}
 
 ///|
@@ -720,3 +950,15 @@ pub extend PresentationRelation with Eq::{not_equal, equal}
 
 ///|
 pub extend PresentationRelation with @debug.Debug::{to_repr}
+
+///|
+pub extend CalculationRelation with Eq::{not_equal, equal}
+
+///|
+pub extend CalculationRelation with @debug.Debug::{to_repr}
+
+///|
+pub extend CalculationGroup with Eq::{not_equal, equal}
+
+///|
+pub extend CalculationGroup with @debug.Debug::{to_repr}
