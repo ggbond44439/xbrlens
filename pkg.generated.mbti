@@ -11,6 +11,12 @@ pub fn check_calculations(XbrlLinkbase, ResolvedTaxonomy, XbrlInstance) -> Resul
 
 pub fn check_fact_integrity(XbrlInstance) -> FactIntegrityReport
 
+pub fn export_csv(XbrlInstance) -> Result[String, XbrlError]
+
+pub fn export_json(XbrlInstance) -> Result[String, XbrlError]
+
+pub fn export_rows(XbrlInstance) -> Result[Array[FactExportRow], XbrlError]
+
 pub fn parse_context_dimensions(XmlNode?, XmlNode?) -> Result[Array[DimensionMember], XbrlError]
 
 pub fn parse_instance(XmlDocument, XbrlLimits) -> Result[XbrlInstance, XbrlError]
@@ -198,6 +204,32 @@ pub(all) enum FactDiagnosticSeverity {
 pub fn FactDiagnosticSeverity::equal(Self, Self) -> Bool
 pub fn FactDiagnosticSeverity::not_equal(Self, Self) -> Bool
 pub fn FactDiagnosticSeverity::to_repr(Self) -> @debug.Repr
+
+pub(all) struct FactExportRow {
+  fact_id : String?
+  concept : String
+  namespace_uri : String
+  local_name : String
+  context_ref : String
+  entity_scheme : String
+  entity_identifier : String
+  period_type : String
+  instant : String?
+  start_date : String?
+  end_date : String?
+  unit_ref : String?
+  unit : String?
+  value : String
+  canonical_value : String?
+  nil : Bool
+  decimals : String?
+  precision : String?
+  language : String?
+  dimensions_json : String
+} derive(Eq, @debug.Debug)
+pub fn FactExportRow::equal(Self, Self) -> Bool
+pub fn FactExportRow::not_equal(Self, Self) -> Bool
+pub fn FactExportRow::to_repr(Self) -> @debug.Repr
 
 pub(all) struct FactIntegrityReport {
   diagnostics : Array[FactDiagnostic]
