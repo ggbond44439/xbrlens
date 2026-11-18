@@ -7,6 +7,8 @@ import {
 }
 
 // Values
+pub fn check_calculations(XbrlLinkbase, ResolvedTaxonomy, XbrlInstance) -> Result[CalculationReport, XbrlError]
+
 pub fn parse_instance(XmlDocument, XbrlLimits) -> Result[XbrlInstance, XbrlError]
 
 pub fn parse_instance_xml(StringView, XbrlLimits) -> Result[XbrlInstance, XbrlError]
@@ -36,6 +38,19 @@ pub(all) enum ArcUse {
 pub fn ArcUse::equal(Self, Self) -> Bool
 pub fn ArcUse::not_equal(Self, Self) -> Bool
 pub fn ArcUse::to_repr(Self) -> @debug.Repr
+
+pub(all) struct CalculationCheck {
+  role_uri : String
+  parent : QName
+  context_ref : String
+  expected : Decimal
+  actual : Decimal
+  matched : Bool
+  child_count : Int32
+} derive(Eq, @debug.Debug)
+pub fn CalculationCheck::equal(Self, Self) -> Bool
+pub fn CalculationCheck::not_equal(Self, Self) -> Bool
+pub fn CalculationCheck::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CalculationGroup {
   role_uri : String
@@ -68,6 +83,15 @@ pub(all) struct CalculationRelation {
 pub fn CalculationRelation::equal(Self, Self) -> Bool
 pub fn CalculationRelation::not_equal(Self, Self) -> Bool
 pub fn CalculationRelation::to_repr(Self) -> @debug.Repr
+
+pub(all) struct CalculationReport {
+  checks : Array[CalculationCheck]
+} derive(Eq, @debug.Debug)
+pub fn CalculationReport::equal(Self, Self) -> Bool
+pub fn CalculationReport::is_valid(Self) -> Bool
+pub fn CalculationReport::mismatches(Self) -> Array[CalculationCheck]
+pub fn CalculationReport::not_equal(Self, Self) -> Bool
+pub fn CalculationReport::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ConceptBalance {
   Debit
@@ -125,6 +149,7 @@ pub fn Decimal::sub(Self, Self, Int32) -> Result[Self, XbrlError]
 pub fn Decimal::to_canonical_string(Self) -> String
 pub fn Decimal::to_repr(Self) -> @debug.Repr
 pub fn Decimal::to_scaled_integer(Self, Int32) -> Result[@bigint.BigInt, XbrlError]
+pub fn Decimal::zero() -> Self
 
 pub(all) struct LabelLink {
   role_uri : String
@@ -394,6 +419,7 @@ pub(all) struct XbrlLinkbase {
 } derive(Eq, @debug.Debug)
 pub fn XbrlLinkbase::calculation_groups(Self, ResolvedTaxonomy) -> Result[Array[CalculationGroup], XbrlError]
 pub fn XbrlLinkbase::calculation_relations(Self, ResolvedTaxonomy) -> Result[Array[CalculationRelation], XbrlError]
+pub fn XbrlLinkbase::check_calculations(Self, ResolvedTaxonomy, XbrlInstance) -> Result[CalculationReport, XbrlError]
 pub fn XbrlLinkbase::equal(Self, Self) -> Bool
 pub fn XbrlLinkbase::labels(Self, ResolvedTaxonomy) -> Result[Array[ConceptLabel], XbrlError]
 pub fn XbrlLinkbase::not_equal(Self, Self) -> Bool

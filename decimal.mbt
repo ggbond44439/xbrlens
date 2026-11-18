@@ -47,6 +47,11 @@ fn decimal_result(
 }
 
 ///|
+pub fn Decimal::zero() -> Decimal {
+  { coefficient: @bigint.BigInt::from_int(0), scale: 0, }
+}
+
+///|
 pub fn Decimal::normalize(self : Decimal) -> Decimal {
   let mut coefficient = self.coefficient
   let mut scale = self.scale
