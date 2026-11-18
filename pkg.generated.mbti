@@ -9,6 +9,8 @@ import {
 // Values
 pub fn check_calculations(XbrlLinkbase, ResolvedTaxonomy, XbrlInstance) -> Result[CalculationReport, XbrlError]
 
+pub fn check_fact_integrity(XbrlInstance) -> FactIntegrityReport
+
 pub fn parse_context_dimensions(XmlNode?, XmlNode?) -> Result[Array[DimensionMember], XbrlError]
 
 pub fn parse_instance(XmlDocument, XbrlLimits) -> Result[XbrlInstance, XbrlError]
@@ -161,6 +163,51 @@ pub fn DimensionMember::dimension(Self) -> QName
 pub fn DimensionMember::equal(Self, Self) -> Bool
 pub fn DimensionMember::not_equal(Self, Self) -> Bool
 pub fn DimensionMember::to_repr(Self) -> @debug.Repr
+
+pub(all) struct FactDiagnostic {
+  kind : FactDiagnosticKind
+  severity : FactDiagnosticSeverity
+  concept : QName
+  context_ref : String
+  unit_ref : String?
+  fact_ids : Array[String]
+  message : String
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn FactDiagnostic::equal(Self, Self) -> Bool
+pub fn FactDiagnostic::not_equal(Self, Self) -> Bool
+pub fn FactDiagnostic::to_repr(Self) -> @debug.Repr
+
+pub(all) enum FactDiagnosticKind {
+  ExactDuplicate
+  ConflictingDuplicate
+  NilConflict
+  MultipleUnits
+  DecimalsPrecisionConflict
+  InvalidDecimals
+  InvalidPrecision
+} derive(Eq, @debug.Debug)
+pub fn FactDiagnosticKind::equal(Self, Self) -> Bool
+pub fn FactDiagnosticKind::not_equal(Self, Self) -> Bool
+pub fn FactDiagnosticKind::to_repr(Self) -> @debug.Repr
+
+pub(all) enum FactDiagnosticSeverity {
+  Error
+  Warning
+} derive(Eq, @debug.Debug)
+pub fn FactDiagnosticSeverity::equal(Self, Self) -> Bool
+pub fn FactDiagnosticSeverity::not_equal(Self, Self) -> Bool
+pub fn FactDiagnosticSeverity::to_repr(Self) -> @debug.Repr
+
+pub(all) struct FactIntegrityReport {
+  diagnostics : Array[FactDiagnostic]
+} derive(Eq, @debug.Debug)
+pub fn FactIntegrityReport::equal(Self, Self) -> Bool
+pub fn FactIntegrityReport::error_count(Self) -> Int32
+pub fn FactIntegrityReport::has_errors(Self) -> Bool
+pub fn FactIntegrityReport::not_equal(Self, Self) -> Bool
+pub fn FactIntegrityReport::to_repr(Self) -> @debug.Repr
+pub fn FactIntegrityReport::warning_count(Self) -> Int32
 
 pub(all) struct LabelLink {
   role_uri : String
@@ -395,6 +442,7 @@ pub(all) struct XbrlInstance {
 } derive(Eq, @debug.Debug)
 pub fn XbrlInstance::context(Self, String) -> XbrlContext?
 pub fn XbrlInstance::equal(Self, Self) -> Bool
+pub fn XbrlInstance::fact_integrity(Self) -> FactIntegrityReport
 pub fn XbrlInstance::facts_for_concept(Self, QName) -> Array[XbrlFact]
 pub fn XbrlInstance::facts_for_context(Self, String) -> Array[XbrlFact]
 pub fn XbrlInstance::not_equal(Self, Self) -> Bool

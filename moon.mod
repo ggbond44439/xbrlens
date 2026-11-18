@@ -1,6 +1,6 @@
 name = "ggbond44439/xbrlens"
 
-version = "0.1.0"
+version = "0.1.1"
 
 readme = "README.md"
 
@@ -13,3 +13,7 @@ keywords = [ "xbrl", "financial-reporting", "taxonomy", "validation" ]
 preferred_target = "wasm"
 
 description = "XBRLens parses XBRL filings, normalizes dimensional facts, and validates calculation relationships."
+
+import {
+  "ggbond44439/xbrlens@0.1.0",
+}
