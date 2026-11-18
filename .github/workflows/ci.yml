@@ -9,9 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: moonbitlang/setup-moonbit@v1
+      - uses: moonbit-community/setup-moonbit@main
         with:
-          moon-version: 0.10.18
+          version: latest
       - name: Check
         run: moon check --target all
       - name: Test wasm
