@@ -11,6 +11,10 @@ pub fn parse_instance(XmlDocument, XbrlLimits) -> Result[XbrlInstance, XbrlError
 
 pub fn parse_instance_xml(StringView, XbrlLimits) -> Result[XbrlInstance, XbrlError]
 
+pub fn parse_linkbase(XmlDocument, XbrlLimits) -> Result[XbrlLinkbase, XbrlError]
+
+pub fn parse_linkbase_xml(StringView, XbrlLimits) -> Result[XbrlLinkbase, XbrlError]
+
 pub fn parse_taxonomy(XmlDocument) -> Result[XbrlSchema, XbrlError]
 
 pub fn parse_taxonomy_xml(StringView, XbrlLimits) -> Result[XbrlSchema, XbrlError]
@@ -24,6 +28,15 @@ pub fn version() -> String
 // Errors
 
 // Types and methods
+pub(all) enum ArcUse {
+  Optional
+  Prohibited
+  Unspecified
+} derive(Eq, @debug.Debug)
+pub fn ArcUse::equal(Self, Self) -> Bool
+pub fn ArcUse::not_equal(Self, Self) -> Bool
+pub fn ArcUse::to_repr(Self) -> @debug.Repr
+
 pub(all) enum ConceptBalance {
   Debit
   Credit
@@ -40,6 +53,19 @@ pub(all) enum ConceptKind {
 pub fn ConceptKind::equal(Self, Self) -> Bool
 pub fn ConceptKind::not_equal(Self, Self) -> Bool
 pub fn ConceptKind::to_repr(Self) -> @debug.Repr
+
+pub(all) struct ConceptLabel {
+  concept : QName
+  link_role_uri : String
+  label_role_uri : String
+  language : String?
+  text : String
+  priority : Int32
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn ConceptLabel::equal(Self, Self) -> Bool
+pub fn ConceptLabel::not_equal(Self, Self) -> Bool
+pub fn ConceptLabel::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ConceptPeriodType {
   Instant
@@ -68,6 +94,51 @@ pub fn Decimal::to_canonical_string(Self) -> String
 pub fn Decimal::to_repr(Self) -> @debug.Repr
 pub fn Decimal::to_scaled_integer(Self, Int32) -> Result[@bigint.BigInt, XbrlError]
 
+pub(all) struct LabelLink {
+  role_uri : String
+  locators : Array[LinkLocator]
+  labels : Array[LabelResource]
+  arcs : Array[LinkArc]
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn LabelLink::equal(Self, Self) -> Bool
+pub fn LabelLink::not_equal(Self, Self) -> Bool
+pub fn LabelLink::to_repr(Self) -> @debug.Repr
+
+pub(all) struct LabelResource {
+  label : String
+  role_uri : String
+  language : String?
+  text : String
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn LabelResource::equal(Self, Self) -> Bool
+pub fn LabelResource::not_equal(Self, Self) -> Bool
+pub fn LabelResource::to_repr(Self) -> @debug.Repr
+
+pub(all) struct LinkArc {
+  from_label : String
+  to_label : String
+  arcrole : String
+  order : Decimal?
+  preferred_label : QName?
+  arc_use : ArcUse
+  priority : Int32
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn LinkArc::equal(Self, Self) -> Bool
+pub fn LinkArc::not_equal(Self, Self) -> Bool
+pub fn LinkArc::to_repr(Self) -> @debug.Repr
+
+pub(all) struct LinkLocator {
+  label : String
+  href : String
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn LinkLocator::equal(Self, Self) -> Bool
+pub fn LinkLocator::not_equal(Self, Self) -> Bool
+pub fn LinkLocator::to_repr(Self) -> @debug.Repr
+
 pub(all) struct NamespaceBinding {
   prefix : String
   uri : String
@@ -76,6 +147,29 @@ pub fn NamespaceBinding::equal(Self, Self) -> Bool
 pub fn NamespaceBinding::new(String, String) -> Self
 pub fn NamespaceBinding::not_equal(Self, Self) -> Bool
 pub fn NamespaceBinding::to_repr(Self) -> @debug.Repr
+
+pub(all) struct PresentationLink {
+  role_uri : String
+  locators : Array[LinkLocator]
+  arcs : Array[LinkArc]
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn PresentationLink::equal(Self, Self) -> Bool
+pub fn PresentationLink::not_equal(Self, Self) -> Bool
+pub fn PresentationLink::to_repr(Self) -> @debug.Repr
+
+pub(all) struct PresentationRelation {
+  link_role_uri : String
+  parent : QName
+  child : QName
+  order : Decimal?
+  preferred_label : QName?
+  priority : Int32
+  offset : Int32
+} derive(Eq, @debug.Debug)
+pub fn PresentationRelation::equal(Self, Self) -> Bool
+pub fn PresentationRelation::not_equal(Self, Self) -> Bool
+pub fn PresentationRelation::to_repr(Self) -> @debug.Repr
 
 pub(all) struct QName {
   namespace_uri : String
@@ -188,6 +282,7 @@ pub(all) enum XbrlError {
   InvalidContext(String, Int32)
   InvalidUnit(String, Int32)
   InvalidTaxonomy(String, Int32)
+  InvalidLinkbase(String, Int32)
   MissingConcept(String)
   UnresolvedReference(String)
   InvalidDimension(String, Int32)
@@ -258,6 +353,16 @@ pub fn XbrlLimits::not_equal(Self, Self) -> Bool
 pub fn XbrlLimits::strict() -> Self
 pub fn XbrlLimits::to_repr(Self) -> @debug.Repr
 pub fn XbrlLimits::validate(Self) -> Result[Unit, XbrlError]
+
+pub(all) struct XbrlLinkbase {
+  label_links : Array[LabelLink]
+  presentation_links : Array[PresentationLink]
+} derive(Eq, @debug.Debug)
+pub fn XbrlLinkbase::equal(Self, Self) -> Bool
+pub fn XbrlLinkbase::labels(Self, ResolvedTaxonomy) -> Result[Array[ConceptLabel], XbrlError]
+pub fn XbrlLinkbase::not_equal(Self, Self) -> Bool
+pub fn XbrlLinkbase::presentation_relations(Self, ResolvedTaxonomy) -> Result[Array[PresentationRelation], XbrlError]
+pub fn XbrlLinkbase::to_repr(Self) -> @debug.Repr
 
 pub(all) enum XbrlPeriod {
   Instant(String)

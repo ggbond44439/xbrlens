@@ -10,6 +10,7 @@ pub(all) enum XbrlError {
   InvalidContext(String, Int32)
   InvalidUnit(String, Int32)
   InvalidTaxonomy(String, Int32)
+  InvalidLinkbase(String, Int32)
   MissingConcept(String)
   UnresolvedReference(String)
   InvalidDimension(String, Int32)
@@ -67,6 +68,10 @@ pub impl Show for XbrlError with fn output(self, logger) {
     InvalidTaxonomy(message, offset) =>
       logger.write_string(
         "invalid taxonomy at offset " + offset.to_string() + ": " + message,
+      )
+    InvalidLinkbase(message, offset) =>
+      logger.write_string(
+        "invalid linkbase at offset " + offset.to_string() + ": " + message,
       )
     MissingConcept(name) => logger.write_string("missing concept: " + name)
     UnresolvedReference(value) =>
