@@ -325,8 +325,17 @@ fn run_calc(invocation : CliInvocation) -> CliResult {
       builder.write_string(check.context_ref)
       builder.write_string(" expected=")
       builder.write_string(check.expected.to_canonical_string())
-      builder.write_string(" actual=")
+      builder.write_string(" expected_range=[")
+      builder.write_string(check.expected_low.to_canonical_string())
+      builder.write_string(",")
+      builder.write_string(check.expected_high.to_canonical_string())
+      builder.write_string("] actual=")
       builder.write_string(check.actual.to_canonical_string())
+      builder.write_string(" actual_range=[")
+      builder.write_string(check.actual_low.to_canonical_string())
+      builder.write_string(",")
+      builder.write_string(check.actual_high.to_canonical_string())
+      builder.write_string("]")
     }
     if report.is_valid() {
       CliResult::success(builder.to_string())

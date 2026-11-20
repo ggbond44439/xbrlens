@@ -38,13 +38,13 @@ fn validation_instance(
   part_b : String,
   child_unit : String,
 ) -> @xbrlens.XbrlInstance raise {
-  let source = "<xbrli:xbrl xmlns:xbrli=\"http://www.xbrl.org/2003/instance\" xmlns:fin=\"urn:calc\" xmlns:iso4217=\"http://www.xbrl.org/2003/iso4217\"><xbrli:context id=\"c\"><xbrli:entity><xbrli:identifier scheme=\"urn:test\">e</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2024-12-31</xbrli:instant></xbrli:period></xbrli:context><xbrli:unit id=\"usd\"><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unit><xbrli:unit id=\"eur\"><xbrli:measure>iso4217:EUR</xbrli:measure></xbrli:unit><fin:Total contextRef=\"c\" unitRef=\"usd\">" +
+  let source = "<xbrli:xbrl xmlns:xbrli=\"http://www.xbrl.org/2003/instance\" xmlns:fin=\"urn:calc\" xmlns:iso4217=\"http://www.xbrl.org/2003/iso4217\"><xbrli:context id=\"c\"><xbrli:entity><xbrli:identifier scheme=\"urn:test\">e</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2024-12-31</xbrli:instant></xbrli:period></xbrli:context><xbrli:unit id=\"usd\"><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unit><xbrli:unit id=\"eur\"><xbrli:measure>iso4217:EUR</xbrli:measure></xbrli:unit><fin:Total contextRef=\"c\" unitRef=\"usd\" decimals=\"2\">" +
     total +
-    "</fin:Total><fin:PartA contextRef=\"c\" unitRef=\"usd\">" +
+    "</fin:Total><fin:PartA contextRef=\"c\" unitRef=\"usd\" decimals=\"2\">" +
     part_a +
     "</fin:PartA><fin:PartB contextRef=\"c\" unitRef=\"" +
     child_unit +
-    "\">" +
+    "\" decimals=\"2\">" +
     part_b +
     "</fin:PartB></xbrli:xbrl>"
   match @xbrlens.parse_instance_xml(source, @xbrlens.XbrlLimits::strict()) {
@@ -114,7 +114,7 @@ test "calculation validation rejects inconsistent units and non-decimal facts" {
 
 ///|
 test "calculation validation skips groups without a matching child fact" {
-  let source = "<xbrli:xbrl xmlns:xbrli=\"http://www.xbrl.org/2003/instance\" xmlns:fin=\"urn:calc\" xmlns:iso4217=\"http://www.xbrl.org/2003/iso4217\"><xbrli:context id=\"c\"><xbrli:entity><xbrli:identifier scheme=\"urn:test\">e</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2024-12-31</xbrli:instant></xbrli:period></xbrli:context><xbrli:unit id=\"usd\"><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unit><fin:Total contextRef=\"c\" unitRef=\"usd\">1</fin:Total></xbrli:xbrl>"
+  let source = "<xbrli:xbrl xmlns:xbrli=\"http://www.xbrl.org/2003/instance\" xmlns:fin=\"urn:calc\" xmlns:iso4217=\"http://www.xbrl.org/2003/iso4217\"><xbrli:context id=\"c\"><xbrli:entity><xbrli:identifier scheme=\"urn:test\">e</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2024-12-31</xbrli:instant></xbrli:period></xbrli:context><xbrli:unit id=\"usd\"><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unit><fin:Total contextRef=\"c\" unitRef=\"usd\" decimals=\"2\">1</fin:Total></xbrli:xbrl>"
   let instance = match
     @xbrlens.parse_instance_xml(source, @xbrlens.XbrlLimits::strict()) {
     Ok(value) => value

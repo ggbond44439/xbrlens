@@ -1,18 +1,24 @@
 ///|
+#derive(Eq, @debug.Debug)
 pub(all) struct CalculationCheck {
   role_uri : String
   parent : QName
   context_ref : String
   expected : Decimal
+  expected_low : Decimal
+  expected_high : Decimal
   actual : Decimal
+  actual_low : Decimal
+  actual_high : Decimal
   matched : Bool
   child_count : Int32
-} derive(Eq, @debug.Debug)
+}
 
 ///|
+#derive(Eq, @debug.Debug)
 pub(all) struct CalculationReport {
   checks : Array[CalculationCheck]
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub fn CalculationReport::is_valid(self : CalculationReport) -> Bool {
@@ -46,30 +52,6 @@ fn numeric_fact_value(fact : XbrlFact) -> Result[Decimal, XbrlError] {
 }
 
 ///|
-fn calculation_unit_matches(
-  parent : XbrlFact,
-  child : XbrlFact,
-) -> Result[Unit, XbrlError] {
-  match parent.unit_ref {
-    Some(parent_unit) =>
-      match child.unit_ref {
-        Some(child_unit) =>
-          if parent_unit == child_unit {
-            Ok(())
-          } else {
-            Err(
-              InvalidFact("calculation facts use different units", child.offset),
-            )
-          }
-        None =>
-          Err(InvalidFact("calculation child fact has no unit", child.offset))
-      }
-    None =>
-      Err(InvalidFact("calculation parent fact has no unit", parent.offset))
-  }
-}
-
-///|
 pub fn check_calculations(
   linkbase : XbrlLinkbase,
   taxonomy : ResolvedTaxonomy,
@@ -85,24 +67,55 @@ pub fn check_calculations(
       if parent_fact.nil || parent_fact.concept != group.parent {
         continue
       }
+      let parent_context = match fact_context_signature(instance, parent_fact) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      let parent_unit = match fact_unit_signature(instance, parent_fact) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
       let actual = match numeric_fact_value(parent_fact) {
         Ok(value) => value
         Err(err) => return Err(err)
       }
+      let actual_half = match fact_half_unit(parent_fact) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
       let mut expected = Decimal::zero()
+      let mut expected_half = Decimal::zero()
       let mut child_count = 0
       for relation in group.relations {
         for child_fact in instance.facts {
-          if child_fact.nil ||
-            child_fact.concept != relation.child ||
-            child_fact.context_ref != parent_fact.context_ref {
+          if child_fact.nil || child_fact.concept != relation.child {
             continue
           }
-          match calculation_unit_matches(parent_fact, child_fact) {
-            Ok(_) => ()
+          let child_context = match
+            fact_context_signature(instance, child_fact) {
+            Ok(value) => value
             Err(err) => return Err(err)
           }
+          if child_context != parent_context {
+            continue
+          }
+          let child_unit = match fact_unit_signature(instance, child_fact) {
+            Ok(value) => value
+            Err(err) => return Err(err)
+          }
+          if child_unit != parent_unit {
+            return Err(
+              InvalidFact(
+                "calculation facts use different unit semantics",
+                child_fact.offset,
+              ),
+            )
+          }
           let child_value = match numeric_fact_value(child_fact) {
+            Ok(value) => value
+            Err(err) => return Err(err)
+          }
+          let child_half = match fact_half_unit(child_fact) {
             Ok(value) => value
             Err(err) => return Err(err)
           }
@@ -111,7 +124,22 @@ pub fn check_calculations(
             Ok(value) => value
             Err(err) => return Err(err)
           }
+          let weight_abs = if relation.weight.compare(Decimal::zero()) < 0 {
+            relation.weight.neg()
+          } else {
+            relation.weight
+          }
+          let weighted_half = match
+            child_half.mul(weight_abs, child_fact.offset) {
+            Ok(value) => value
+            Err(err) => return Err(err)
+          }
           expected = match expected.add(weighted, parent_fact.offset) {
+            Ok(value) => value
+            Err(err) => return Err(err)
+          }
+          expected_half = match
+            expected_half.add(weighted_half, parent_fact.offset) {
             Ok(value) => value
             Err(err) => return Err(err)
           }
@@ -121,13 +149,36 @@ pub fn check_calculations(
       if child_count == 0 {
         continue
       }
+      let expected_low = match expected.sub(expected_half, parent_fact.offset) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      let expected_high = match
+        expected.add(expected_half, parent_fact.offset) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      let actual_low = match actual.sub(actual_half, parent_fact.offset) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      let actual_high = match actual.add(actual_half, parent_fact.offset) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
       checks.push({
         role_uri: group.role_uri,
         parent: group.parent,
         context_ref: parent_fact.context_ref,
         expected,
+        expected_low,
+        expected_high,
         actual,
-        matched: expected.compare(actual) == 0,
+        actual_low,
+        actual_high,
+        matched: range_overlap(
+          expected_low, expected_high, actual_low, actual_high,
+        ),
         child_count,
       })
     }

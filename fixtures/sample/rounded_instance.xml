@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:iso4217="http://www.xbrl.org/2003/iso4217" xmlns:ex="http://example.com/xbrlens/taxonomy/2024">
+  <link:schemaRef xlink:type="simple" xlink:href="taxonomy.xsd"/>
+  <xbrli:context id="instant2024"><xbrli:entity><xbrli:identifier scheme="http://www.sec.gov/CIK">0000000001</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2024-12-31</xbrli:instant></xbrli:period></xbrli:context>
+  <xbrli:unit id="usd"><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unit>
+  <ex:Assets contextRef="instant2024" unitRef="usd" decimals="-6">5400000</ex:Assets>
+  <ex:CurrentAssets contextRef="instant2024" unitRef="usd" decimals="-6">2000000</ex:CurrentAssets>
+  <ex:NoncurrentAssets contextRef="instant2024" unitRef="usd" decimals="-6">3000000</ex:NoncurrentAssets>
+</xbrli:xbrl>
