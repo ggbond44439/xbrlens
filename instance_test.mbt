@@ -83,15 +83,21 @@ test "XBRL instance rejects invalid periods and missing required structure" {
 }
 
 ///|
-test "XBRL instance rejects unresolved references and tuple facts" {
+test "XBRL instance rejects unresolved references and parses tuple facts" {
   let unresolved_context = "<xbrli:xbrl xmlns:xbrli=\"http://www.xbrl.org/2003/instance\" xmlns:x=\"urn:x\"><x:Amount contextRef=\"missing\">1</x:Amount></xbrli:xbrl>"
   assert_true(
     instance_err(unresolved_context) is @xbrlens.UnresolvedReference(_),
   )
   let unresolved_unit = "<xbrli:xbrl xmlns:xbrli=\"http://www.xbrl.org/2003/instance\" xmlns:x=\"urn:x\"><xbrli:context id=\"c\"><xbrli:entity><xbrli:identifier scheme=\"urn:test\">e</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2024-01-01</xbrli:instant></xbrli:period></xbrli:context><x:Amount contextRef=\"c\" unitRef=\"missing\">1</x:Amount></xbrli:xbrl>"
   assert_true(instance_err(unresolved_unit) is @xbrlens.UnresolvedReference(_))
-  let tuple = "<xbrli:xbrl xmlns:xbrli=\"http://www.xbrl.org/2003/instance\" xmlns:x=\"urn:x\"><xbrli:context id=\"c\"><xbrli:entity><xbrli:identifier scheme=\"urn:test\">e</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2024-01-01</xbrli:instant></xbrli:period></xbrli:context><x:Tuple contextRef=\"c\"><x:Child contextRef=\"c\">1</x:Child></x:Tuple></xbrli:xbrl>"
-  assert_true(instance_err(tuple) is @xbrlens.UnsupportedFeature(_))
+  let tuple = "<xbrli:xbrl xmlns:xbrli=\"http://www.xbrl.org/2003/instance\" xmlns:x=\"urn:x\"><xbrli:context id=\"c\"><xbrli:entity><xbrli:identifier scheme=\"urn:test\">e</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2024-01-01</xbrli:instant></xbrli:period></xbrli:context><x:Tuple id=\"t\"><x:Child contextRef=\"c\">1</x:Child><x:Nested id=\"n\"><x:Child contextRef=\"c\">2</x:Child></x:Nested></x:Tuple></xbrli:xbrl>"
+  let parsed = instance_ok(tuple)
+  assert_eq(parsed.facts.length(), 0)
+  assert_eq(parsed.tuples.length(), 1)
+  assert_eq(parsed.tuples[0].id, Some("t"))
+  assert_eq(parsed.tuples[0].facts.length(), 1)
+  assert_eq(parsed.tuples[0].tuples.length(), 1)
+  assert_eq(parsed.tuples[0].tuples[0].facts[0].value, "2")
 }
 
 ///|

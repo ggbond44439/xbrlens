@@ -23,6 +23,8 @@ pub fn export_rows(XbrlInstance) -> Result[Array[FactExportRow], XbrlError]
 
 pub fn parse_context_dimensions(XmlNode?, XmlNode?) -> Result[Array[DimensionMember], XbrlError]
 
+pub fn parse_extension_nodes(Array[XmlNode], Array[XbrlContext], Array[XbrlUnitDefinition], XbrlLimits) -> Result[(Array[XbrlFact], Array[XbrlTuple]), XbrlError]
+
 pub fn parse_instance(XmlDocument, XbrlLimits) -> Result[XbrlInstance, XbrlError]
 
 pub fn parse_instance_xml(StringView, XbrlLimits) -> Result[XbrlInstance, XbrlError]
@@ -57,6 +59,16 @@ pub(all) enum ArcUse {
 pub fn ArcUse::equal(Self, Self) -> Bool
 pub fn ArcUse::not_equal(Self, Self) -> Bool
 pub fn ArcUse::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub(all) struct ArcroleRef {
+  arcrole_uri : String
+  href : String
+  offset : Int32
+}
+pub fn ArcroleRef::equal(Self, Self) -> Bool
+pub fn ArcroleRef::not_equal(Self, Self) -> Bool
+pub fn ArcroleRef::to_repr(Self) -> @debug.Repr
 
 #derive(Eq, @debug.Debug)
 pub(all) struct CalculationCheck {
@@ -322,6 +334,30 @@ pub fn FactIntegrityReport::to_repr(Self) -> @debug.Repr
 pub fn FactIntegrityReport::warning_count(Self) -> Int32
 
 #derive(Eq, @debug.Debug)
+pub(all) struct FootnoteLink {
+  role_uri : String
+  locators : Array[LinkLocator]
+  footnotes : Array[FootnoteResource]
+  arcs : Array[LinkArc]
+  offset : Int32
+}
+pub fn FootnoteLink::equal(Self, Self) -> Bool
+pub fn FootnoteLink::not_equal(Self, Self) -> Bool
+pub fn FootnoteLink::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub(all) struct FootnoteResource {
+  label : String
+  role_uri : String
+  language : String?
+  text : String
+  offset : Int32
+}
+pub fn FootnoteResource::equal(Self, Self) -> Bool
+pub fn FootnoteResource::not_equal(Self, Self) -> Bool
+pub fn FootnoteResource::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
 pub(all) struct LabelLink {
   role_uri : String
   locators : Array[LinkLocator]
@@ -440,6 +476,16 @@ pub(all) struct ResolvedTaxonomySchema {
 pub fn ResolvedTaxonomySchema::equal(Self, Self) -> Bool
 pub fn ResolvedTaxonomySchema::not_equal(Self, Self) -> Bool
 pub fn ResolvedTaxonomySchema::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub(all) struct RoleRef {
+  role_uri : String
+  href : String
+  offset : Int32
+}
+pub fn RoleRef::equal(Self, Self) -> Bool
+pub fn RoleRef::not_equal(Self, Self) -> Bool
+pub fn RoleRef::to_repr(Self) -> @debug.Repr
 
 #derive(Eq, @debug.Debug)
 pub(all) struct RoleType {
@@ -582,6 +628,7 @@ pub(all) struct XbrlInstance {
   contexts : Array[XbrlContext]
   units : Array[XbrlUnitDefinition]
   facts : Array[XbrlFact]
+  tuples : Array[XbrlTuple]
 }
 pub fn XbrlInstance::context(Self, String) -> XbrlContext?
 pub fn XbrlInstance::equal(Self, Self) -> Bool
@@ -623,6 +670,9 @@ pub(all) struct XbrlLinkbase {
   label_links : Array[LabelLink]
   presentation_links : Array[PresentationLink]
   calculation_links : Array[CalculationLink]
+  footnote_links : Array[FootnoteLink]
+  role_refs : Array[RoleRef]
+  arcrole_refs : Array[ArcroleRef]
 }
 pub fn XbrlLinkbase::calculation_groups(Self, ResolvedTaxonomy) -> Result[Array[CalculationGroup], XbrlError]
 pub fn XbrlLinkbase::calculation_relations(Self, ResolvedTaxonomy) -> Result[Array[CalculationRelation], XbrlError]
@@ -654,6 +704,18 @@ pub fn XbrlSchema::concept(Self, String, String) -> XbrlConcept?
 pub fn XbrlSchema::equal(Self, Self) -> Bool
 pub fn XbrlSchema::not_equal(Self, Self) -> Bool
 pub fn XbrlSchema::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub(all) struct XbrlTuple {
+  id : String?
+  concept : QName
+  facts : Array[XbrlFact]
+  tuples : Array[XbrlTuple]
+  offset : Int32
+}
+pub fn XbrlTuple::equal(Self, Self) -> Bool
+pub fn XbrlTuple::not_equal(Self, Self) -> Bool
+pub fn XbrlTuple::to_repr(Self) -> @debug.Repr
 
 #derive(Eq, @debug.Debug)
 pub(all) enum XbrlUnit {

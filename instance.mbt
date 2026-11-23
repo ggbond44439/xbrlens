@@ -61,6 +61,7 @@ pub(all) struct XbrlInstance {
   contexts : Array[XbrlContext]
   units : Array[XbrlUnitDefinition]
   facts : Array[XbrlFact]
+  tuples : Array[XbrlTuple]
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -468,17 +469,6 @@ fn parse_fact(node : XmlNode) -> Result[XbrlFact, XbrlError] {
 }
 
 ///|
-fn has_fact_id(facts : Array[XbrlFact], id : String) -> Bool {
-  for fact in facts {
-    match fact.id {
-      Some(existing) if existing == id => return true
-      _ => ()
-    }
-  }
-  false
-}
-
-///|
 pub fn parse_instance(
   document : XmlDocument,
   limits : XbrlLimits,
@@ -539,55 +529,15 @@ pub fn parse_instance(
           ),
         )
       }
-    } else if required_unqualified_attribute(child, "contextRef") is Some(_) {
+    } else if child.name.namespace_uri != XBRL_LINK_NS {
       fact_nodes.push(child)
     }
   }
-  let facts : Array[XbrlFact] = []
-  for node in fact_nodes {
-    let fact = match parse_fact(node) {
-      Ok(value) => value
-      Err(err) => return Err(err)
-    }
-    match fact.id {
-      Some(id) =>
-        if has_fact_id(facts, id) {
-          return Err(DuplicateFact(id, node.offset))
-        }
-      None => ()
-    }
-    let mut context_found = false
-    for context in contexts {
-      if context.id == fact.context_ref {
-        context_found = true
-        break
-      }
-    }
-    if !context_found {
-      return Err(UnresolvedReference("context '" + fact.context_ref + "'"))
-    }
-    match fact.unit_ref {
-      Some(unit_id) => {
-        let mut unit_found = false
-        for unit in units {
-          if unit.id == unit_id {
-            unit_found = true
-            break
-          }
-        }
-        if !unit_found {
-          return Err(UnresolvedReference("unit '" + unit_id + "'"))
-        }
-      }
-      None => ()
-    }
-    facts.push(fact)
-    match limits.check_facts(facts.length()) {
-      Ok(_) => ()
-      Err(err) => return Err(err)
-    }
+  let (facts, tuples) = match parse_extension_nodes(fact_nodes, contexts, units, limits) {
+    Ok(value) => value
+    Err(err) => return Err(err)
   }
-  Ok({ schema_refs, contexts, units, facts, })
+  Ok({ schema_refs, contexts, units, facts, tuples, })
 }
 
 ///|

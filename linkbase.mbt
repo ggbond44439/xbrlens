@@ -8,6 +8,9 @@ const XBRL_PARENT_CHILD_ARROLE : String = "http://www.xbrl.org/2003/arcrole/pare
 const XBRL_SUMMATION_ITEM_ARROLE : String = "http://www.xbrl.org/2003/arcrole/summation-item"
 
 ///|
+const XBRL_FACT_FOOTNOTE_ARROLE : String = "http://www.xbrl.org/2003/arcrole/fact-footnote"
+
+///|
 const XML_LANGUAGE_NS : String = "http://www.w3.org/XML/1998/namespace"
 
 ///|
@@ -72,10 +75,45 @@ pub(all) struct CalculationLink {
 } derive(Eq, @debug.Debug)
 
 ///|
+pub(all) struct FootnoteResource {
+  label : String
+  role_uri : String
+  language : String?
+  text : String
+  offset : Int32
+} derive(Eq, @debug.Debug)
+
+///|
+pub(all) struct FootnoteLink {
+  role_uri : String
+  locators : Array[LinkLocator]
+  footnotes : Array[FootnoteResource]
+  arcs : Array[LinkArc]
+  offset : Int32
+} derive(Eq, @debug.Debug)
+
+///|
+pub(all) struct RoleRef {
+  role_uri : String
+  href : String
+  offset : Int32
+} derive(Eq, @debug.Debug)
+
+///|
+pub(all) struct ArcroleRef {
+  arcrole_uri : String
+  href : String
+  offset : Int32
+} derive(Eq, @debug.Debug)
+
+///|
 pub(all) struct XbrlLinkbase {
   label_links : Array[LabelLink]
   presentation_links : Array[PresentationLink]
   calculation_links : Array[CalculationLink]
+  footnote_links : Array[FootnoteLink]
+  role_refs : Array[RoleRef]
+  arcrole_refs : Array[ArcroleRef]
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -245,6 +283,29 @@ fn parse_label_resource(node : XmlNode) -> Result[LabelResource, XbrlError] {
 }
 
 ///|
+fn parse_footnote_resource(node : XmlNode) -> Result[FootnoteResource, XbrlError] {
+  match check_link_xlink_type(node, "resource") {
+    Ok(_) => ()
+    Err(err) => return Err(err)
+  }
+  let label = match required_link_xlink_attribute(node, "label") {
+    Ok(value) => value
+    Err(err) => return Err(err)
+  }
+  let role_uri = match required_link_xlink_attribute(node, "role") {
+    Ok(value) => value
+    Err(err) => return Err(err)
+  }
+  Ok({
+    label,
+    role_uri,
+    language: node.attribute(XML_LANGUAGE_NS, "lang"),
+    text: node.text,
+    offset: node.offset,
+  })
+}
+
+///|
 fn parse_link_arc(node : XmlNode) -> Result[LinkArc, XbrlError] {
   match check_link_xlink_type(node, "arc") {
     Ok(_) => ()
@@ -376,6 +437,35 @@ fn validate_label_link(link : LabelLink) -> Result[Unit, XbrlError] {
     if label_resource_by_label(link.labels, arc.to_label) is None {
       return Err(
         InvalidLinkbase("labelArc to label does not resolve", arc.offset),
+      )
+    }
+  }
+  Ok(())
+}
+
+///|
+fn validate_footnote_link(link : FootnoteLink) -> Result[Unit, XbrlError] {
+  for arc in link.arcs {
+    if arc.arcrole != XBRL_FACT_FOOTNOTE_ARROLE {
+      return Err(
+        InvalidLinkbase("footnoteArc requires the fact-footnote arcrole", arc.offset),
+      )
+    }
+    if locator_by_label(link.locators, arc.from_label) is None {
+      return Err(
+        InvalidLinkbase("footnoteArc from label does not resolve", arc.offset),
+      )
+    }
+    let mut found = false
+    for resource in link.footnotes {
+      if resource.label == arc.to_label {
+        found = true
+        break
+      }
+    }
+    if !found {
+      return Err(
+        InvalidLinkbase("footnoteArc to label does not resolve", arc.offset),
       )
     }
   }
@@ -593,6 +683,109 @@ fn parse_calculation_link(node : XmlNode) -> Result[CalculationLink, XbrlError] 
 }
 
 ///|
+fn parse_footnote_link(node : XmlNode) -> Result[FootnoteLink, XbrlError] {
+  match check_link_xlink_type(node, "extended") {
+    Ok(_) => ()
+    Err(err) => return Err(err)
+  }
+  let role_uri = match required_link_xlink_attribute(node, "role") {
+    Ok(value) => value
+    Err(err) => return Err(err)
+  }
+  let locators : Array[LinkLocator] = []
+  let footnotes : Array[FootnoteResource] = []
+  let arcs : Array[LinkArc] = []
+  for child in node.children {
+    if child.name.matches(XBRL_LINK_NS, "loc") {
+      let locator = match parse_locator(child) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      if has_locator_label(locators, locator.label) {
+        return Err(
+          InvalidLinkbase(
+            "duplicate locator label '" + locator.label + "'",
+            child.offset,
+          ),
+        )
+      }
+      locators.push(locator)
+    } else if child.name.matches(XBRL_LINK_NS, "footnote") {
+      let resource = match parse_footnote_resource(child) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      let mut duplicate = false
+      for existing in footnotes {
+        if existing.label == resource.label {
+          duplicate = true
+        }
+      }
+      if duplicate {
+        return Err(
+          InvalidLinkbase(
+            "duplicate footnote label '" + resource.label + "'",
+            child.offset,
+          ),
+        )
+      }
+      footnotes.push(resource)
+    } else if child.name.matches(XBRL_LINK_NS, "footnoteArc") {
+      let arc = match parse_link_arc(child) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      arcs.push(arc)
+    }
+  }
+  let link : FootnoteLink = {
+    role_uri,
+    locators,
+    footnotes,
+    arcs,
+    offset: node.offset,
+  }
+  match validate_footnote_link(link) {
+    Ok(_) => Ok(link)
+    Err(err) => Err(err)
+  }
+}
+
+///|
+fn parse_role_ref(node : XmlNode) -> Result[RoleRef, XbrlError] {
+  match check_link_xlink_type(node, "simple") {
+    Ok(_) => ()
+    Err(err) => return Err(err)
+  }
+  let role_uri = match optional_link_attribute(node, "roleURI") {
+    Some(value) => value
+    None => return Err(InvalidLinkbase("roleRef roleURI is required", node.offset))
+  }
+  let href = match required_link_xlink_attribute(node, "href") {
+    Ok(value) => value
+    Err(err) => return Err(err)
+  }
+  Ok({ role_uri, href, offset: node.offset })
+}
+
+///|
+fn parse_arcrole_ref(node : XmlNode) -> Result[ArcroleRef, XbrlError] {
+  match check_link_xlink_type(node, "simple") {
+    Ok(_) => ()
+    Err(err) => return Err(err)
+  }
+  let arcrole_uri = match optional_link_attribute(node, "arcroleURI") {
+    Some(value) => value
+    None => return Err(InvalidLinkbase("arcroleRef arcroleURI is required", node.offset))
+  }
+  let href = match required_link_xlink_attribute(node, "href") {
+    Ok(value) => value
+    Err(err) => return Err(err)
+  }
+  Ok({ arcrole_uri, href, offset: node.offset })
+}
+
+///|
 pub fn parse_linkbase(
   document : XmlDocument,
   limits : XbrlLimits,
@@ -608,9 +801,24 @@ pub fn parse_linkbase(
   let label_links : Array[LabelLink] = []
   let presentation_links : Array[PresentationLink] = []
   let calculation_links : Array[CalculationLink] = []
+  let footnote_links : Array[FootnoteLink] = []
+  let role_refs : Array[RoleRef] = []
+  let arcrole_refs : Array[ArcroleRef] = []
   let mut total_arcs = 0
   for child in document.root.children {
-    if child.name.matches(XBRL_LINK_NS, "labelLink") {
+    if child.name.matches(XBRL_LINK_NS, "roleRef") {
+      let role_ref_value = match parse_role_ref(child) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      role_refs.push(role_ref_value)
+    } else if child.name.matches(XBRL_LINK_NS, "arcroleRef") {
+      let arcrole_ref_value = match parse_arcrole_ref(child) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      arcrole_refs.push(arcrole_ref_value)
+    } else if child.name.matches(XBRL_LINK_NS, "labelLink") {
       let link = match parse_label_link(child) {
         Ok(value) => value
         Err(err) => return Err(err)
@@ -643,9 +851,27 @@ pub fn parse_linkbase(
         Err(err) => return Err(err)
       }
       calculation_links.push(link)
+    } else if child.name.matches(XBRL_LINK_NS, "footnoteLink") {
+      let link = match parse_footnote_link(child) {
+        Ok(value) => value
+        Err(err) => return Err(err)
+      }
+      total_arcs += link.arcs.length()
+      match limits.check_linkbase_arcs(total_arcs) {
+        Ok(_) => ()
+        Err(err) => return Err(err)
+      }
+      footnote_links.push(link)
     }
   }
-  Ok({ label_links, presentation_links, calculation_links, })
+  Ok({
+    label_links,
+    presentation_links,
+    calculation_links,
+    footnote_links,
+    role_refs,
+    arcrole_refs,
+  })
 }
 
 ///|
@@ -926,6 +1152,30 @@ pub extend CalculationLink with Eq::{not_equal, equal}
 
 ///|
 pub extend CalculationLink with @debug.Debug::{to_repr}
+
+///|
+pub extend FootnoteResource with Eq::{not_equal, equal}
+
+///|
+pub extend FootnoteResource with @debug.Debug::{to_repr}
+
+///|
+pub extend FootnoteLink with Eq::{not_equal, equal}
+
+///|
+pub extend FootnoteLink with @debug.Debug::{to_repr}
+
+///|
+pub extend RoleRef with Eq::{not_equal, equal}
+
+///|
+pub extend RoleRef with @debug.Debug::{to_repr}
+
+///|
+pub extend ArcroleRef with Eq::{not_equal, equal}
+
+///|
+pub extend ArcroleRef with @debug.Debug::{to_repr}
 
 ///|
 pub extend PresentationLink with Eq::{not_equal, equal}

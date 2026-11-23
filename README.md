@@ -5,7 +5,8 @@ XBRLens is a MoonBit-native XBRL 2.1 parsing and validation engine. It is intend
 ## Features
 
 - Bounded, namespace-aware XML parser with DTD/entity rejection
-- XBRL contexts, periods, entities, units and facts
+- XBRL contexts, periods, entities, units, item facts and nested tuple facts
+- Footnote links, roleRef and arcroleRef parsing
 - Exact arbitrary-precision decimal arithmetic
 - Taxonomy schema parsing for concepts, imports and role types
 - Offline taxonomy catalog and import resolution
@@ -20,10 +21,10 @@ XBRLens is a MoonBit-native XBRL 2.1 parsing and validation engine. It is intend
 ## Install
 
 ```bash
-moon add ggbond44439/xbrlens@0.1.6
+moon add ggbond44439/xbrlens@0.3.0
 ```
 
-The current Mooncakes release is `0.1.6`. The library requires MoonBit `moonc >= 0.10.16` and has no native runtime dependency.
+The current Mooncakes release is `0.3.0`. The library requires MoonBit `moonc >= 0.10.16` and has no native runtime dependency.
 
 ## Usage
 
@@ -80,9 +81,17 @@ moon fmt --check
 
 ## XBRL 2.1 conformance target
 
-This project targets a bounded core profile of XBRL 2.1, not the complete XBRL conformance suite. The implemented profile covers instance XML, QName-aware facts, contexts, periods, units, taxonomy concepts and imports, role types, label/presentation/calculation linkbases, XBRL Dimensions 1.0 explicit and typed members, fact integrity and calculation consistency.
+The project target is complete conformance to the XBRL 2.1 base specification and XBRL Dimensions 1.0. The bounded parser is a security and resource-control layer, not the conformance boundary. No standard-defined behavior such as tuple facts or footnote links is permanently excluded from the target.
 
-The current profile intentionally excludes XBRL Formula, transformation and generic-link semantics, full network DTD discovery, full XML Schema datatype validation, tuple fact processing and complete footnote-link processing. Unsupported structures return explicit errors or remain outside the public model; they are not treated as valid silently.
+The implementation is organized into explicit delivery phases:
+
+1. **Current baseline:** bounded XML parsing; QName and namespace handling; instances, contexts, periods, units and item facts; item and nested tuple facts; label, presentation, calculation and footnote linkbases; roleRef and arcroleRef; XBRL Dimensions 1.0 explicit and typed members; precision-aware calculation checks; integrity diagnostics; JSON/CSV export and CLI.
+2. **DX/DTS phase:** complete XML Schema and XLink conformance relevant to XBRL, `xsi:nil` and `xsi:type` validation, substitution-group and type derivation semantics, full DTS discovery through offline catalogs, import/redefine/include handling and linkbase role resolution.
+3. **Instance semantics phase:** complete tuple content models, tuple/item identity and consistency rules, footnote and locator edge cases, context aspect equivalence, unit equivalence and all duplicate-fact consistency rules required by the base specification.
+4. **Conformance phase:** run the official XBRL 2.1 and XBRL Dimensions conformance suites, track every test failure explicitly, and require the complete suite to pass before declaring full conformance. Compatibility fixtures and negative tests remain in CI.
+5. **Adjacent specifications:** XBRL Formula, Transformation and Generic Link are separate specifications and are not used to redefine the XBRL 2.1 base target. They can be added as explicitly scoped extensions after the base conformance suite passes.
+
+The current release is therefore a standards-targeted implementation in progress, not a claim that every conformance-suite case already passes.
 
 ## Calculation decision mechanism
 
